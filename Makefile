@@ -24,11 +24,42 @@ lint:
 		echo "not gofmt'd:"; echo "$$unformatted"; exit 1; \
 	fi
 
+# Type-checks the AWS and cluster suites, which plain `go vet ./...` skips. Kept out of
+# `lint` because it compiles the fixture SDKs: aws-sdk-go-v2/service/ec2 alone peaks over
+# 3 GiB, which OOM-kills a unit-test container sized for the CLI.
+lint-tagged:
+	go vet -tags integration ./...
+	go vet -tags e2e ./...
+
 unit-test:
 	go test ./...
 
 unit-test-race:
 	go test -race ./...
+
+# Tests that talk to real AWS, behind a build tag so `make test` cannot reach them.
+# Needs credentials and AWS_REGION.
+test-integration: lint-tagged test-probe test-filters test-adopt test-kinds
+
+test-probe:
+	go test -tags integration -timeout 15m -v ./internal/tagging/
+
+test-filters:
+	go test -tags integration -timeout 20m -v ./test/integration/ -run TestTypeFilters
+
+# One fixture per adoptable kind that can be created free of charge; the rest carry a
+# recorded reason. CREATES AND DELETES real AWS resources.
+test-kinds:
+	go test -tags integration -timeout 60m -v ./test/integration/ -run 'TestEveryCatalogKindHasAnEntry|TestAdoptEveryKind'
+
+# CREATES AND DELETES real AWS resources, all free of charge.
+test-adopt:
+	go test -tags integration -timeout 40m -v ./test/integration/ \
+		-run 'TestAdoptIsDeterministic|TestAdoptExplainsAnEmptyResult'
+
+# Additionally needs a cluster running an ACK controller, which test-infra provisions.
+test-e2e:
+	go test -tags e2e -timeout 40m -v ./test/e2e/
 
 fmt:
 	gofmt -l -w .
@@ -36,4 +67,5 @@ fmt:
 clean:
 	rm -rf ./bin
 
-.PHONY: build install test lint unit-test unit-test-race fmt clean
+.PHONY: build install test lint lint-tagged unit-test unit-test-race \
+	test-integration test-probe test-filters test-adopt test-kinds test-e2e fmt clean

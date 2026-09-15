@@ -64,7 +64,8 @@ the reasoning behind it.
 ## Development
 
 ```bash
-make test   # lint, unit tests, race detector
+make test               # lint, unit tests, race detector
+make test-integration   # talks to real AWS; needs credentials and AWS_REGION
 ```
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
