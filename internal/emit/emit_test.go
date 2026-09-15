@@ -175,11 +175,26 @@ func TestDefaultName(t *testing.T) {
 	// ARN-primary: bindings carry only "arn", so use the ARN tail.
 	arnPrimary := &resolver.Resolved{
 		Fields: map[string]string{"arn": "arn:aws:sns:us-east-1:1:my-topic"},
-		Resource: metadata.Resource{Kind: "Topic",
+		Resource: metadata.Resource{Kind: "Topic", ARNPrimary: true,
 			Bindings: []metadata.Binding{{Key: "arn", From: "${ARN}"}}},
 	}
 	name = DefaultName(arnPrimary, "arn:aws:sns:us-east-1:1:my-topic")
 	assert.Regexp(t, `^my-topic-[0-9a-f]{8}$`, name)
+}
+
+// TestDefaultName_TailsOnlyARNPrimary covers the case that separates the catalog's
+// arn_primary flag from a value that merely looks like an ARN: a kind binding one field
+// whose value starts with "arn:" keeps the whole value, since only arn_primary kinds are
+// named after the tail.
+func TestDefaultName_TailsOnlyARNPrimary(t *testing.T) {
+	notPrimary := &resolver.Resolved{
+		Fields: map[string]string{"roleARN": "arn:aws:iam::1:role/my-role"},
+		Resource: metadata.Resource{Kind: "Thing",
+			Bindings: []metadata.Binding{{Key: "roleARN", From: "${RoleARN}"}}},
+	}
+	name := DefaultName(notPrimary, "arn:aws:thing:us-west-2:1:thing/t1")
+	assert.Regexp(t, `^arn-aws-iam-1-role-my-role-[0-9a-f]{8}$`, name,
+		"a non-arn_primary kind keeps its bound value whole")
 }
 
 // TestDefaultName_PreventsDoubleAdoption covers why names derive from the resource's

@@ -28,10 +28,11 @@ import (
 	"github.com/aws-controllers-k8s/ackctl/internal/debuglog"
 )
 
-// UnsupportedTypeError means GetResources rejected a resource-type filter as
-// malformed, which is the only filter problem it reports. A filter that is
-// well-formed but wrong is accepted and returns nothing, indistinguishable from the
-// kind having no resources.
+// UnsupportedTypeError means GetResources rejected a resource-type filter as malformed,
+// which is the only filter problem it reports. A filter that parses but names a type AWS
+// does not index the kind under, such as apigateway:api where the indexed type is
+// apigateway:apis, is accepted and returns nothing, indistinguishable from the kind having
+// no resources.
 type UnsupportedTypeError struct {
 	TypeFilter string
 	Err        error
@@ -152,6 +153,7 @@ func (c *Client) CountByType(ctx context.Context, typeFilter string, sampleLimit
 		}
 		for _, m := range page.ResourceTagMappingList {
 			if m.ResourceARN == nil {
+				debuglog.Logf("  skip: entry with nil ResourceARN")
 				continue
 			}
 			total++

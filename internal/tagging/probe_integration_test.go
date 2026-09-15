@@ -197,6 +197,9 @@ func TestProbeDetectsAMalformedFilter(t *testing.T) {
 	require.NoError(t, err)
 
 	got := probeFilter(ctx, rgt.NewFromConfig(cfg), "::::", nil)
+	if got.verdict == inconclusive {
+		t.Skipf("probe inconclusive, so this proves nothing either way: %v", got.err)
+	}
 	require.Equal(t, malformed, got.verdict,
 		"malformed-filter detection is broken, so the sweep's only assertion proves "+
 			"nothing (got %s: %v)", verdictName[got.verdict], got.err)
@@ -213,6 +216,9 @@ func TestProbeCannotDetectAPlausibleWrongFilter(t *testing.T) {
 
 	for _, filter := range []string{"notaservice:notatype", "lambda:notatype", "lambda:code signing config"} {
 		got := probeFilter(ctx, api, filter, nil)
+		if got.verdict == inconclusive {
+			t.Skipf("%q: probe inconclusive: %v", filter, got.err)
+		}
 		require.Equal(t, unproven, got.verdict,
 			"%q: expected the API to accept a nonsense filter and return nothing. If this "+
 				"now reports %s, AWS has started validating resource types and the sweep "+

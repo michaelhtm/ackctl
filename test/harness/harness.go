@@ -14,7 +14,7 @@
 //go:build integration || e2e
 
 // Package harness drives the built ackctl binary against real AWS. It is shared by the
-// integration and e2e suites, and CREATES AND DELETES real resources, all free of charge and
+// integration and e2e suites, and CREATES AND DELETES real resources in your account, each
 // tagged with a run-unique value.
 package harness
 

@@ -92,7 +92,9 @@ type Options struct {
 	// AdoptionSet labels the collection this CR belongs to, and never affects Name.
 	AdoptionSet string
 	Namespace   string
-	// Region is written to services.k8s.aws/region and must be set.
+	// Region is written to services.k8s.aws/region, which is how the controller decides
+	// where to look. It must be set, because ARNs for global-form resources such as s3 and
+	// iam leave the region slot empty, so it cannot be recovered from the ARN.
 	Region string
 }
 
@@ -201,9 +203,11 @@ func DefaultName(res *resolver.Resolved, arnStr string) string {
 		}
 	}
 	// ARN-primary resources bind only "arn", so name them after the ARN's tail.
-	if len(parts) == 1 && strings.HasPrefix(parts[0], "arn:") {
+	if res.Resource.ARNPrimary && len(parts) == 1 {
 		parts[0] = arnTail(parts[0])
 	}
+	// Unreachable with the embedded catalog, which has no entry without bindings, and the
+	// resolver rejects a binding that renders empty. Kept because DefaultName cannot fail.
 	if len(parts) == 0 {
 		parts = []string{arnTail(arnStr)}
 	}

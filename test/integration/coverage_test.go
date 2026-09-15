@@ -125,8 +125,9 @@ func selectedKinds(t *testing.T) []fixtures.KindEntry {
 	return out
 }
 
-// TestAdoptEveryKind is the per-kind end-to-end case: provision a real resource of every kind
-// that has a fixture, then require adopt to emit exactly the adoption-fields AWS reported.
+// TestAdoptEveryKind asserts only on the YAML adopt emits. No cluster and no controller are
+// involved: the real AWS resource exists so that AWS itself, rather than a hand-written
+// fixture, supplies the ARN and the adoption-fields to compare against.
 //
 // Every fixture is created before anything is asserted, because the wait for the Tagging API
 // to index them dominates the runtime.

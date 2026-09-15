@@ -47,12 +47,13 @@ test-probe:
 test-filters:
 	go test -tags integration -timeout 20m -v ./test/integration/ -run TestTypeFilters
 
-# One fixture per adoptable kind that can be created free of charge; the rest carry a
+# One fixture per adoptable kind that needs no provisioned capacity; the rest carry a
 # recorded reason. CREATES AND DELETES real AWS resources.
 test-kinds:
 	go test -tags integration -timeout 60m -v ./test/integration/ -run 'TestEveryCatalogKindHasAnEntry|TestAdoptEveryKind'
 
-# CREATES AND DELETES real AWS resources, all free of charge.
+# CREATES AND DELETES real AWS resources in your account. The fixtures provision no
+# capacity, but you are responsible for any charges they incur.
 test-adopt:
 	go test -tags integration -timeout 40m -v ./test/integration/ \
 		-run 'TestAdoptIsDeterministic|TestAdoptExplainsAnEmptyResult'
